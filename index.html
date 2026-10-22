@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Діаграми: тест</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9f1fb;--card:#fffdf6;--text:#16305c;--muted:#51648a;--line:#c9d6ea;--accent:#16305c;--accent-text:#fff;--sun:#ffc928;--ok:#1f7a45;--okbg:#e2f5ea;--bad:#b3322f;--badbg:#fde7e6;--grid:#b8c4d8;
+color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1b34;--card:#162747;--text:#eef3ff;--muted:#a9b8d6;--line:#2d4268;--accent:#ffc928;--accent-text:#16305c;--ok:#6fdc9a;--okbg:#14382a;--bad:#ff938f;--badbg:#42201f;--grid:#3a4d73;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1b34;--card:#162747;--text:#eef3ff;--muted:#a9b8d6;--line:#2d4268;--accent:#ffc928;--accent-text:#16305c;--ok:#6fdc9a;--okbg:#14382a;--bad:#ff938f;--badbg:#42201f;--grid:#3a4d73;color-scheme:dark}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:400 17px/1.5 Nunito,"Segoe UI",system-ui,sans-serif}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--accent);color:var(--accent-text);display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;font-weight:800}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--accent);z-index:10}
+.bar button{font:inherit;font-size:14px;border:2px solid currentColor;background:transparent;color:inherit;border-radius:20px;padding:4px 12px;cursor:pointer}
+main{max-width:760px;margin:0 auto;padding:20px 14px 40px}
+h1{font-size:30px;line-height:1.15;margin:8px 0 6px}
+.lead{color:var(--muted);margin:0 0 22px}
+section{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:18px 16px;margin-bottom:26px}
+h2{font-size:22px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 12px;font-size:15px}
+.chart{border:2px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px;color:var(--text)}
+.chart svg{display:block;width:100%;height:auto;max-width:520px;margin:0 auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:15px;margin:0 0 18px;padding:0;list-style:none}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:6px;vertical-align:-2px;border:1px solid var(--text)}
+.q{border-top:2px dashed var(--line);padding:14px 0 6px}
+.q p{margin:0 0 4px;font-weight:800}
+.hint{font-size:14px;color:var(--muted);margin:0 0 8px}
+.opt{display:flex;gap:10px;align-items:center;padding:9px 12px;margin:6px 0;border:2px solid var(--line);border-radius:12px;cursor:pointer;min-height:44px}
+.opt:has(input:checked){border-color:var(--text);background:color-mix(in srgb,var(--sun) 22%,transparent)}
+.opt input{width:20px;height:20px;accent-color:var(--text);flex:none}
+.opt.ok{border-color:var(--ok);background:var(--okbg)}
+.opt.no{border-color:var(--bad);background:var(--badbg)}
+.opt .m{margin-left:auto;font-weight:800}
+.opt.ok .m{color:var(--ok)}.opt.no .m{color:var(--bad)}
+.go{font:inherit;font-weight:800;background:var(--accent);color:var(--accent-text);border:0;border-radius:12px;padding:9px 20px;margin:8px 0;cursor:pointer;min-height:44px}
+.go:disabled{opacity:.4;cursor:default}
+.fb{margin:6px 0 4px;padding:10px 12px;border-radius:12px;font-size:16px}
+.fb.ok{background:var(--okbg);color:var(--ok)}.fb.no{background:var(--badbg);color:var(--bad)}
+.fb b{display:block}
+.fb span{color:var(--text)}
+.end{display:none;text-align:center;font-size:20px;font-weight:800;padding:22px 16px;border:3px solid var(--sun);border-radius:18px;background:var(--card)}
+.end.show{display:block}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="bar"><span>Правильно: <span id="sc">0</span> з <span id="tot">0</span></span><button id="reset" type="button">Почати заново</button></div>
+<main>
+<h1>Розглянь діаграму і дай відповідь на запитання</h1>
+<p class="lead">Три діаграми — гістограма, графік і кругова діаграма. Обери відповідь і натисни «Перевірити».</p>
+<div id="app"></div>
+<div class="end" id="end"></div>
+</main>
+<script>
+const NS="http://www.w3.org/2000/svg";
+const svgOpen=(w,h,label)=>`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}" xmlns="${NS}" font-family="Nunito,sans-serif" font-size="14" fill="currentColor">`;
+
+function barChart(){
+  const W=520,H=320,L=40,R=10,T=12,B=34,pw=W-L-R,ph=H-T-B,max=18;
+  const cls=["3-А","3-Б","3-В"],S=[["#4f81bd",[9,7,12]],["#c0504d",[13,10,6]],["#2230e6",[4,8,15]]];
+  const y=v=>T+ph-v/max*ph;let s=svgOpen(W,H,"Гістограма: улюблені домашні тварини учнів 3-А, 3-Б, 3-В класів");
+  for(let v=0;v<=max;v+=2)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-8}" y="${y(v)+5}" text-anchor="end">${v}</text>`;
+  s+=`<line x1="${L}" x2="${L}" y1="${T}" y2="${T+ph}" stroke="currentColor"/>`;
+  const gw=pw/3,bw=gw*.2;
+  cls.forEach((c,i)=>{const x0=L+i*gw+gw/2-1.5*bw;
+    S.forEach(([col,vals],k)=>{const v=vals[i];s+=`<rect x="${x0+k*bw}" y="${y(v)}" width="${bw}" height="${ph-(y(v)-T)}" fill="${col}" stroke="currentColor" stroke-width=".8"/>`});
+    s+=`<text x="${L+i*gw+gw/2}" y="${H-10}" text-anchor="middle" font-weight="800">${c}</text>`});
+  return s+"</svg>";
+}
+function lineChart(){
+  const W=520,H=320,L=40,R=14,T=12,B=34,pw=W-L-R,ph=H-T-B,max=35;
+  const d=["1 тиж.","2 тиж.","3 тиж.","4 тиж.","5 тиж."],S=[["#d97f00",[6,12,18,26,32]],["#1fa84a",[6,10,18,20,22]]];
+  const x=i=>L+pw*(i+.5)/5,y=v=>T+ph-v/max*ph;let s=svgOpen(W,H,"Лінійна діаграма: висота соняшника і квасолі за п’ять тижнів");
+  for(let v=0;v<=max;v+=5)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-8}" y="${y(v)+5}" text-anchor="end">${v}</text>`;
+  S.forEach(([col,vals])=>{s+=`<polyline fill="none" stroke="${col}" stroke-width="2.5" points="${vals.map((v,i)=>x(i)+","+y(v)).join(" ")}"/>`;
+    vals.forEach((v,i)=>s+=`<circle cx="${x(i)}" cy="${y(v)}" r="4.5" fill="${col}"/>`)});
+  d.forEach((n,i)=>s+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-weight="800">${n}</text>`);
+  return s+"</svg>";
+}
+function pieChart(){
+  const data=[["яблука",4,"#f08a89"],["банани",8,"#f6d743"],["апельсини",5,"#f5a54a"],["груші",3,"#9fd17a"],["виноград",6,"#b39ddb"]];
+  const tot=data.reduce((a,d)=>a+d[1],0),cx=160,cy=135,r=115;let a=-Math.PI/2;
+  let s=svgOpen(320,270,"Кругова діаграма: улюблені фрукти дітей");
+  data.forEach(([n,v,c])=>{const b=a+v/tot*2*Math.PI,large=b-a>Math.PI?1:0;
+    s+=`<path d="M${cx} ${cy}L${cx+r*Math.cos(a)} ${cy+r*Math.sin(a)}A${r} ${r} 0 ${large} 1 ${cx+r*Math.cos(b)} ${cy+r*Math.sin(b)}Z" fill="${c}" stroke="#16305c" stroke-width="2"/>`;
+    const m=(a+b)/2;s+=`<text x="${cx+r*.62*Math.cos(m)}" y="${cy+r*.62*Math.sin(m)+7}" text-anchor="middle" font-size="22" font-weight="800" fill="#16305c">${v}</text>`;a=b});
+  return s+"</svg>";
+}
+
+const T=[
+{title:"1. Гістограма",sub:"Яку домашню тварину найбільше люблять діти у трьох третіх класах.",
+ svg:barChart,legend:[["#4f81bd","коти"],["#c0504d","собаки"],["#2230e6","хом’яки"]],
+ qs:[
+ {q:"В якому класі найбільше дітей люблять хом’яків?",o:["3-А","3-Б","3-В"],a:[2],w:"У 3-В стовпчик хом’яків найвищий — 15 дітей."},
+ {q:"Скільки дітей люблять котів у 3-А, у 3-Б, у 3-В?",o:["3-А — 13, 3-Б — 10, 3-В — 6","3-А — 9, 3-Б — 7, 3-В — 12","3-А — 9, 3-Б — 8, 3-В — 12","3-А — 12, 3-Б — 7, 3-В — 9"],a:[1],w:"Сині стовпчики: 9, 7 і 12."},
+ {q:"Для скількох дітей з усіх 3-х класів собака — улюблена тварина?",o:["13","26","29","31"],a:[2],w:"13 + 10 + 6 = 29."},
+ {q:"Скільки дітей 3-Б класу брали участь в опитуванні?",o:["10","23","25","27"],a:[2],w:"7 + 10 + 8 = 25."},
+ {q:"Чи можеш відповісти, скільком дівчаткам з 3-В класу подобаються коти?",o:["Так, 12 дівчаткам","Ні, діаграма не показує, скільки з них дівчаток","Так, 6 дівчаткам"],a:[1],w:"Діаграма показує лише кількість дітей, а не окремо хлопців і дівчаток."},
+ {q:"Скільки всього дітей 3-х класів брали участь в опитуванні?",o:["74","84","85","94"],a:[1],w:"3-А: 9 + 13 + 4 = 26. 3-Б: 25. 3-В: 12 + 6 + 15 = 33. Разом 26 + 25 + 33 = 84."}
+ ]},
+{title:"2. Лінійна діаграма (графік)",sub:"Висота соняшника й квасолі (у сантиметрах), яку вимірювали щотижня протягом п’яти тижнів.",
+ svg:lineChart,legend:[["#d97f00","соняшник"],["#1fa84a","квасоля"]],
+ qs:[
+ {q:"Якою була висота соняшника на 4-му тижні?",o:["18 см","20 см","26 см","32 см"],a:[2],w:"Помаранчева лінія на 4-му тижні — на позначці 26."},
+ {q:"На скільки сантиметрів соняшник був вищий за квасолю на 5-му тижні?",o:["4 см","10 см","22 см","32 см"],a:[1],w:"32 − 22 = 10 см."},
+ {q:"Які твердження правильні?",hint:"Обери всі правильні відповіді.",o:["На 1-му тижні обидві рослини мали по 6 см","На 3-му тижні обидві рослини мали по 18 см","Квасоля завжди була вищою за соняшник","На 2-му тижні рослини були однакової висоти"],a:[0,1],w:"Лінії зустрічаються на 1-му (6 см) і 3-му (18 см) тижні. На 2-му тижні було 12 і 10 см."},
+ {q:"Знайди середню висоту соняшника за перші три тижні.",o:["10 см","12 см","18 см","36 см"],a:[1],w:"(6 + 12 + 18) ÷ 3 = 36 ÷ 3 = 12 см."},
+ {q:"За який тиждень соняшник виріс найбільше?",o:["З 1-го на 2-й","З 2-го на 3-й","З 3-го на 4-й","З 4-го на 5-й"],a:[2],w:"Зросту: +6, +6, +8, +6 см. Найбільше — з 3-го на 4-й тиждень (+8 см)."}
+ ]},
+{title:"3. Кругова діаграма",sub:"Який фрукт вибрали діти (числа вказані на діаграмі).",
+ svg:pieChart,legend:[["#f08a89","яблука"],["#f6d743","банани"],["#f5a54a","апельсини"],["#9fd17a","груші"],["#b39ddb","виноград"]],
+ qs:[
+ {q:"Скільки дітей обрали яблука?",o:["3","4","5","8"],a:[1],w:"Червоний сектор — 4."},
+ {q:"Скільки учнів обрали виноград?",o:["3","5","6","8"],a:[2],w:"Фіолетовий сектор — 6."},
+ {q:"Скільки всього дітей брали участь в опитуванні?",o:["22","24","26","28"],a:[2],w:"4 + 8 + 5 + 3 + 6 = 26."},
+ {q:"Який фрукт найпопулярніший серед дітей?",o:["Яблука","Банани","Апельсини","Виноград"],a:[1],w:"У бананів найбільший сектор — 8 дітей."},
+ {q:"Скільки дітей разом обрали яблука й апельсини?",o:["8","9","10","13"],a:[1],w:"4 + 5 = 9."},
+ {q:"На скільки менше дітей любить груші, ніж банани?",o:["3","5","6","11"],a:[1],w:"8 − 3 = 5."},
+ {q:"Чи можна відповісти, скільки окремо хлопців і окремо дівчаток обрали банани?",o:["Так, 4 хлопці і 4 дівчинки","Ні, діаграма цього не показує"],a:[1],w:"Діаграма показує лише загальну кількість дітей."}
+ ]}];
+
+const app=document.getElementById("app"),sc=document.getElementById("sc"),tot=document.getElementById("tot"),end=document.getElementById("end");
+let done=0,good=0,all=0;
+function build(){
+  app.innerHTML="";done=good=0;all=0;end.className="end";
+  T.forEach((t,ti)=>{
+    const sec=document.createElement("section");
+    sec.innerHTML=`<h2>${t.title}</h2><p class="sub">${t.sub}</p><div class="chart">${t.svg()}</div><ul class="legend">${t.legend.map(l=>`<li><i style="background:${l[0]}"></i>${l[1]}</li>`).join("")}</ul>`;
+    t.qs.forEach((q,qi)=>{
+      all++;const multi=q.a.length>1,name=`q${ti}_${qi}`,box=document.createElement("div");box.className="q";
+      box.innerHTML=`<p>${qi+1}) ${q.q}</p>${q.hint?`<div class="hint">${q.hint}</div>`:""}`+
+        q.o.map((o,oi)=>`<label class="opt"><input type="${multi?"checkbox":"radio"}" name="${name}" value="${oi}"><span>${o}</span><span class="m"></span></label>`).join("")+
+        `<button type="button" class="go">Перевірити</button><div class="fb" hidden></div>`;
+      const btn=box.querySelector(".go"),fb=box.querySelector(".fb");
+      btn.onclick=()=>{
+        const ins=[...box.querySelectorAll("input")],sel=ins.filter(i=>i.checked).map(i=>+i.value);
+        if(!sel.length){fb.hidden=false;fb.className="fb no";fb.innerHTML="<b>Спочатку обери відповідь.</b>";return}
+        const okAll=sel.length===q.a.length&&sel.every(v=>q.a.includes(v));
+        ins.forEach((i,k)=>{i.disabled=true;const lab=i.parentElement,m=lab.querySelector(".m");
+          if(q.a.includes(k)){lab.classList.add("ok");m.textContent="✓"}else if(i.checked){lab.classList.add("no");m.textContent="✗"}});
+        fb.hidden=false;fb.className="fb "+(okAll?"ok":"no");
+        fb.innerHTML=`<b>${okAll?"✓ Правильно!":"✗ Неправильно."}</b><span>${q.w}</span>`;
+        btn.disabled=true;done++;if(okAll)good++;sc.textContent=good;
+        if(done===all){const p=good/all;end.innerHTML=`Результат: ${good} з ${all}<br>${p>=.9?"Чудово! ⭐⭐⭐":p>=.6?"Добре! ⭐⭐ Спробуй ще раз — вийде ще краще.":"Не засмучуйся! ⭐ Розгляни діаграми ще раз і спробуй знову."}`;end.className="end show";end.scrollIntoView({behavior:"smooth",block:"center"})}
+      };
+      sec.appendChild(box);
+    });
+    app.appendChild(sec);
+  });
+  sc.textContent=0;tot.textContent=all;
+}
+document.getElementById("reset").onclick=()=>{build();window.scrollTo({top:0,behavior:"smooth"})};
+build();
+</script>
+</body>
+</html>
