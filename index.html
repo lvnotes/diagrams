@@ -49,21 +49,34 @@ h2{font-size:22px;margin:0 0 4px}
 </style>
 </head>
 <body>
-<div class="bar"><span>Правильно: <span id="sc">0</span> з <span id="tot">0</span></span><button id="reset" type="button">Почати заново</button></div>
+<div class="bar"><span>Правильно: <span id="sc">0</span> з <span id="tot">0</span></span><button id="reset" type="button">Новий варіант</button></div>
 <main>
 <h1>Розглянь діаграму і дай відповідь на запитання</h1>
-<p class="lead">Три діаграми — гістограма, графік і кругова діаграма. Обери відповідь і натисни «Перевірити».</p>
+<p class="lead">Три діаграми — гістограма, графік і кругова діаграма. Обери відповідь і натисни «Перевірити». Числа щоразу нові.</p>
 <div id="app"></div>
 <div class="end" id="end"></div>
 </main>
 <script>
 const NS="http://www.w3.org/2000/svg";
 const svgOpen=(w,h,label)=>`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}" xmlns="${NS}" font-family="Nunito,sans-serif" font-size="14" fill="currentColor">`;
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]]}return a};
+const range=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+const sample=(a,n)=>shuf(a).slice(0,n);
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const cap=t=>t[0].toUpperCase()+t.slice(1);
+const pl=(n,a,b,c)=>{const m=n%100,d=n%10;return m>10&&m<15?c:d===1?a:d>1&&d<5?b:c};
+function num(q,c,cands,w,unit=""){
+  let set=[];for(const x of cands)if(x>0&&x!==c&&!set.includes(x))set.push(x);
+  set=set.slice(0,3);
+  for(let d=1;set.length<3;d++)for(const x of [c+d,c-d])if(x>0&&x!==c&&!set.includes(x)&&set.length<3)set.push(x);
+  const o=shuf([c,...set]);return{q,o:o.map(x=>x+unit),a:[o.indexOf(c)],w};
+}
+function pick(q,opts,ci,w,hint){const o=shuf(opts.map((t,i)=>[t,i===ci]));return{q,o:o.map(x=>x[0]),a:o.map((x,i)=>x[1]?i:-1).filter(i=>i>=0),w,hint}}
 
-function barChart(){
+function barChart(S,cls){
   const W=520,H=320,L=40,R=10,T=12,B=34,pw=W-L-R,ph=H-T-B,max=18;
-  const cls=["3-А","3-Б","3-В"],S=[["#4f81bd",[9,7,12]],["#c0504d",[13,10,6]],["#2230e6",[4,8,15]]];
-  const y=v=>T+ph-v/max*ph;let s=svgOpen(W,H,"Гістограма: улюблені домашні тварини учнів 3-А, 3-Б, 3-В класів");
+  const y=v=>T+ph-v/max*ph;let s=svgOpen(W,H,"Гістограма: улюблені домашні тварини учнів трьох класів");
   for(let v=0;v<=max;v+=2)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-8}" y="${y(v)+5}" text-anchor="end">${v}</text>`;
   s+=`<line x1="${L}" x2="${L}" y1="${T}" y2="${T+ph}" stroke="currentColor"/>`;
   const gw=pw/3,bw=gw*.2;
@@ -72,19 +85,17 @@ function barChart(){
     s+=`<text x="${L+i*gw+gw/2}" y="${H-10}" text-anchor="middle" font-weight="800">${c}</text>`});
   return s+"</svg>";
 }
-function lineChart(){
+function lineChart(S){
   const W=520,H=320,L=40,R=14,T=12,B=34,pw=W-L-R,ph=H-T-B,max=35;
-  const d=["1 тиж.","2 тиж.","3 тиж.","4 тиж.","5 тиж."],S=[["#d97f00",[6,12,18,26,32]],["#1fa84a",[6,10,18,20,22]]];
   const x=i=>L+pw*(i+.5)/5,y=v=>T+ph-v/max*ph;let s=svgOpen(W,H,"Лінійна діаграма: висота соняшника і квасолі за п’ять тижнів");
   for(let v=0;v<=max;v+=5)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-8}" y="${y(v)+5}" text-anchor="end">${v}</text>`;
   S.forEach(([col,vals])=>{s+=`<polyline fill="none" stroke="${col}" stroke-width="2.5" points="${vals.map((v,i)=>x(i)+","+y(v)).join(" ")}"/>`;
     vals.forEach((v,i)=>s+=`<circle cx="${x(i)}" cy="${y(v)}" r="4.5" fill="${col}"/>`)});
-  d.forEach((n,i)=>s+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-weight="800">${n}</text>`);
+  for(let i=0;i<5;i++)s+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-weight="800">${i+1} тиж.</text>`;
   return s+"</svg>";
 }
-function pieChart(){
-  const data=[["яблука",4,"#f08a89"],["банани",8,"#f6d743"],["апельсини",5,"#f5a54a"],["груші",3,"#9fd17a"],["виноград",6,"#b39ddb"]];
-  const tot=data.reduce((a,d)=>a+d[1],0),cx=160,cy=135,r=115;let a=-Math.PI/2;
+function pieChart(data){
+  const tot=sum(data.map(d=>d[1])),cx=160,cy=135,r=115;let a=-Math.PI/2;
   let s=svgOpen(320,270,"Кругова діаграма: улюблені фрукти дітей");
   data.forEach(([n,v,c])=>{const b=a+v/tot*2*Math.PI,large=b-a>Math.PI?1:0;
     s+=`<path d="M${cx} ${cy}L${cx+r*Math.cos(a)} ${cy+r*Math.sin(a)}A${r} ${r} 0 ${large} 1 ${cx+r*Math.cos(b)} ${cy+r*Math.sin(b)}Z" fill="${c}" stroke="#16305c" stroke-width="2"/>`;
@@ -92,45 +103,80 @@ function pieChart(){
   return s+"</svg>";
 }
 
-const T=[
-{title:"1. Гістограма",sub:"Яку домашню тварину найбільше люблять діти у трьох третіх класах.",
- svg:barChart,legend:[["#4f81bd","коти"],["#c0504d","собаки"],["#2230e6","хом’яки"]],
- qs:[
- {q:"В якому класі найбільше дітей люблять хом’яків?",o:["3-А","3-Б","3-В"],a:[2],w:"У 3-В стовпчик хом’яків найвищий — 15 дітей."},
- {q:"Скільки дітей люблять котів у 3-А, у 3-Б, у 3-В?",o:["3-А — 13, 3-Б — 10, 3-В — 6","3-А — 9, 3-Б — 7, 3-В — 12","3-А — 9, 3-Б — 8, 3-В — 12","3-А — 12, 3-Б — 7, 3-В — 9"],a:[1],w:"Сині стовпчики: 9, 7 і 12."},
- {q:"Для скількох дітей з усіх 3-х класів собака — улюблена тварина?",o:["13","26","29","31"],a:[2],w:"13 + 10 + 6 = 29."},
- {q:"Скільки дітей 3-Б класу брали участь в опитуванні?",o:["10","23","25","27"],a:[2],w:"7 + 10 + 8 = 25."},
- {q:"Чи можеш відповісти, скільком дівчаткам з 3-В класу подобаються коти?",o:["Так, 12 дівчаткам","Ні, діаграма не показує, скільки з них дівчаток","Так, 6 дівчаткам"],a:[1],w:"Діаграма показує лише кількість дітей, а не окремо хлопців і дівчаток."},
- {q:"Скільки всього дітей 3-х класів брали участь в опитуванні?",o:["74","84","85","94"],a:[1],w:"3-А: 9 + 13 + 4 = 26. 3-Б: 25. 3-В: 12 + 6 + 15 = 33. Разом 26 + 25 + 33 = 84."}
- ]},
-{title:"2. Лінійна діаграма (графік)",sub:"Висота соняшника й квасолі (у сантиметрах), яку вимірювали щотижня протягом п’яти тижнів.",
- svg:lineChart,legend:[["#d97f00","соняшник"],["#1fa84a","квасоля"]],
- qs:[
- {q:"Якою була висота соняшника на 4-му тижні?",o:["18 см","20 см","26 см","32 см"],a:[2],w:"Помаранчева лінія на 4-му тижні — на позначці 26."},
- {q:"На скільки сантиметрів соняшник був вищий за квасолю на 5-му тижні?",o:["4 см","10 см","22 см","32 см"],a:[1],w:"32 − 22 = 10 см."},
- {q:"Які твердження правильні?",hint:"Обери всі правильні відповіді.",o:["На 1-му тижні обидві рослини мали по 6 см","На 3-му тижні обидві рослини мали по 18 см","Квасоля завжди була вищою за соняшник","На 2-му тижні рослини були однакової висоти"],a:[0,1],w:"Лінії зустрічаються на 1-му (6 см) і 3-му (18 см) тижні. На 2-му тижні було 12 і 10 см."},
- {q:"Знайди середню висоту соняшника за перші три тижні.",o:["10 см","12 см","18 см","36 см"],a:[1],w:"(6 + 12 + 18) ÷ 3 = 36 ÷ 3 = 12 см."},
- {q:"За який тиждень соняшник виріс найбільше?",o:["З 1-го на 2-й","З 2-го на 3-й","З 3-го на 4-й","З 4-го на 5-й"],a:[2],w:"Зросту: +6, +6, +8, +6 см. Найбільше — з 3-го на 4-й тиждень (+8 см)."}
- ]},
-{title:"3. Кругова діаграма",sub:"Який фрукт вибрали діти (числа вказані на діаграмі).",
- svg:pieChart,legend:[["#f08a89","яблука"],["#f6d743","банани"],["#f5a54a","апельсини"],["#9fd17a","груші"],["#b39ddb","виноград"]],
- qs:[
- {q:"Скільки дітей обрали яблука?",o:["3","4","5","8"],a:[1],w:"Червоний сектор — 4."},
- {q:"Скільки учнів обрали виноград?",o:["3","5","6","8"],a:[2],w:"Фіолетовий сектор — 6."},
- {q:"Скільки всього дітей брали участь в опитуванні?",o:["22","24","26","28"],a:[2],w:"4 + 8 + 5 + 3 + 6 = 26."},
- {q:"Який фрукт найпопулярніший серед дітей?",o:["Яблука","Банани","Апельсини","Виноград"],a:[1],w:"У бананів найбільший сектор — 8 дітей."},
- {q:"Скільки дітей разом обрали яблука й апельсини?",o:["8","9","10","13"],a:[1],w:"4 + 5 = 9."},
- {q:"На скільки менше дітей любить груші, ніж банани?",o:["3","5","6","11"],a:[1],w:"8 − 3 = 5."},
- {q:"Чи можна відповісти, скільки окремо хлопців і окремо дівчаток обрали банани?",o:["Так, 4 хлопці і 4 дівчинки","Ні, діаграма цього не показує"],a:[1],w:"Діаграма показує лише загальну кількість дітей."}
- ]}];
+function genBar(){
+  const cls=["3-А","3-Б","3-В"];
+  const an=[{n:"коти",acc:"котів",sg:"кіт",c:"#4f81bd"},{n:"собаки",acc:"собак",sg:"собака",c:"#c0504d"},{n:"хом’яки",acc:"хом’яків",sg:"хом’як",c:"#2230e6"}];
+  let v,cs;do{v=an.map(()=>sample(range(3,17),3));cs=[0,1,2].map(i=>sum(v.map(x=>x[i])))}while(cs.some(x=>x<15||x>35));
+  const [a1,a2,a3]=shuf([0,1,2]);
+  const all=sum(cs);
+  const qs=[];
+  const m=v[a1].indexOf(Math.max(...v[a1]));
+  qs.push(pick(`В якому класі найбільше дітей люблять ${an[a1].acc}?`,cls,m,`У ${cls[m]} стовпчик (${an[a1].n}) найвищий — ${v[a1][m]} дітей.`));
+  const t=v[a2],f=x=>cls.map((c,i)=>`${c} — ${x[i]}`).join(", ");
+  const bad=[v[a1],[...t].reverse(),t.map((x,i)=>i===1?x+1:x),t.map((x,i)=>i===0?x-1:x),v[a3]].map(f);
+  const wrong=[...new Set(bad)].filter(x=>x!==f(t)).slice(0,3);
+  qs.push(pick(`Скільки дітей люблять ${an[a2].acc} у ${cls[0]}, у ${cls[1]}, у ${cls[2]}?`,[f(t),...wrong],0,`Стовпчики (${an[a2].n}): ${t.join(", ")}.`));
+  qs.push(num(`Для скількох дітей з усіх 3-х класів ${an[a3].sg} — улюблена тварина?`,sum(v[a3]),[sum(v[a3])-v[a3][0],sum(v[a3])-v[a3][2],sum(v[a3])+v[a3][1]],`${v[a3].join(" + ")} = ${sum(v[a3])}.`));
+  const c=rnd(0,2),cv=v.map(x=>x[c]);
+  qs.push(num(`Скільки дітей ${cls[c]} класу брали участь в опитуванні?`,cs[c],shuf(cv.map(x=>cs[c]-x)),`${cv.join(" + ")} = ${cs[c]}.`));
+  const k=rnd(0,2),a=rnd(0,2),w=v[a][k],o=v[a][(k+1)%3];
+  qs.push(pick(`Чи можеш відповісти, скільком дівчаткам з ${cls[k]} класу подобаються ${an[a].n}?`,[`Так, ${w} ${pl(w,"дівчинці","дівчинкам","дівчаткам")}`,"Ні, діаграма не показує, скільки з них дівчаток",`Так, ${o} ${pl(o,"дівчинці","дівчинкам","дівчаткам")}`],1,"Діаграма показує лише кількість дітей, а не окремо хлопців і дівчаток."));
+  qs.push(num("Скільки всього дітей 3-х класів брали участь в опитуванні?",all,shuf(cs.map(x=>all-x)).concat([all+10]),cs.map((x,i)=>`${cls[i]}: ${x}`).join(". ")+`. Разом ${cs.join(" + ")} = ${all}.`));
+  return{title:"1. Гістограма",sub:"Яку домашню тварину найбільше люблять діти у трьох третіх класах.",svg:barChart(an.map((x,i)=>[x.c,v[i]]),cls),legend:an.map(x=>[x.c,x.n]),qs};
+}
+
+function genLine(){
+  let s,b,inc,k;
+  for(;;){
+    inc=[0,0,0,0].map(()=>rnd(3,7));const mx=Math.max(...inc);
+    if(inc.filter(x=>x===mx).length!==1)continue;
+    s=[rnd(4,7)];inc.forEach(d=>s.push(s[s.length-1]+d));
+    if((s[0]+s[1]+s[2])%3)continue;
+    k=rnd(2,3);b=s.map((x,i)=>i===0||i===k?x:x-rnd(1,4));
+    if(b.every((x,i)=>x>0&&(i===0||x>=b[i-1])))break;
+  }
+  const P=[{g:"соняшника",col:"#d97f00",l:"помаранчева",v:s},{g:"квасолі",col:"#1fa84a",l:"зелена",v:b}];
+  const qs=[],p=rnd(0,1),w=rnd(1,4),arr=P[p].v,oth=P[1-p].v;
+  qs.push(num(`Якою була висота ${P[p].g} на ${w+1}-му тижні?`,arr[w],[arr[w-1],arr[w+1],oth[w]],`${cap(P[p].l)} лінія на ${w+1}-му тижні — на позначці ${arr[w]}.`," см"));
+  const w2=sample([1,2,3,4].filter(i=>i!==k),1)[0],d=s[w2]-b[w2];
+  qs.push(num(`На скільки сантиметрів соняшник був вищий за квасолю на ${w2+1}-му тижні?`,d,[s[w2],b[w2],d+1],`${s[w2]} − ${b[w2]} = ${d} см.`," см"));
+  const m=sample([1,2,3,4].filter(i=>i!==k),1)[0];
+  qs.push(Object.assign(pick("Які твердження правильні?",[`На 1-му тижні обидві рослини мали по ${s[0]} см`,`На ${k+1}-му тижні обидві рослини мали по ${s[k]} см`,"Квасоля завжди була вищою за соняшник",`На ${m+1}-му тижні рослини були однакової висоти`],0,`Лінії зустрічаються на 1-му (${s[0]} см) і ${k+1}-му (${s[k]} см) тижні. На ${m+1}-му тижні було ${s[m]} і ${b[m]} см.`,"Обери всі правильні відповіді."),{}));
+  const last=qs[qs.length-1];
+  const txt=[`На 1-му тижні обидві рослини мали по ${s[0]} см`,`На ${k+1}-му тижні обидві рослини мали по ${s[k]} см`];
+  last.a=last.o.map((t,i)=>txt.includes(t)?i:-1).filter(i=>i>=0);
+  const sm=s[0]+s[1]+s[2],av=sm/3;
+  qs.push(num("Знайди середню висоту соняшника за перші три тижні.",av,[sm,s[2],av+1],`(${s[0]} + ${s[1]} + ${s[2]}) ÷ 3 = ${sm} ÷ 3 = ${av} см.`," см"));
+  const j=inc.indexOf(Math.max(...inc));
+  qs.push(pick("За який тиждень соняшник виріс найбільше?",[0,1,2,3].map(i=>`З ${i+1}-го на ${i+2}-й`),j,`Зріст: ${inc.map(x=>"+"+x).join(", ")} см. Найбільше — з ${j+1}-го на ${j+2}-й тиждень (+${inc[j]} см).`));
+  return{title:"2. Лінійна діаграма (графік)",sub:"Висота соняшника й квасолі (у сантиметрах), яку вимірювали щотижня протягом п’яти тижнів.",svg:lineChart(P.map(x=>[x.col,x.v])),legend:P.map(x=>[x.col,x.g==="соняшника"?"соняшник":"квасоля"]),qs};
+}
+
+function genPie(){
+  const F=[["яблука","#f08a89"],["банани","#f6d743"],["апельсини","#f5a54a"],["груші","#9fd17a"],["виноград","#b39ddb"]];
+  const val=sample(range(2,9),5),data=F.map((f,i)=>[f[0],val[i],f[1]]),tot=sum(val);
+  const [i1,i2,i3,i4,i5]=shuf([0,1,2,3,4]),n=i=>F[i][0],qs=[];
+  qs.push(num(`Скільки дітей обрали ${n(i1)}?`,val[i1],[val[i1]+1,val[i1]-1,val[i2]],`Сектор «${n(i1)}» — ${val[i1]}.`));
+  qs.push(num(`Скільки учнів обрали ${n(i2)}?`,val[i2],[val[i2]+1,val[i2]-1,val[i1]],`Сектор «${n(i2)}» — ${val[i2]}.`));
+  qs.push(num("Скільки всього дітей брали участь в опитуванні?",tot,[tot-val[i3],tot+1,tot-1],`${val.join(" + ")} = ${tot}.`));
+  const mx=val.indexOf(Math.max(...val)),ch=[mx,...sample([0,1,2,3,4].filter(i=>i!==mx),3)];
+  qs.push(pick("Який фрукт найпопулярніший серед дітей?",ch.map(i=>cap(n(i))),0,`У «${n(mx)}» найбільший сектор — ${val[mx]} дітей.`));
+  qs.push(num(`Скільки дітей разом обрали ${n(i3)} й ${n(i4)}?`,val[i3]+val[i4],[Math.abs(val[i3]-val[i4]),val[i3]+val[i4]+1,tot],`${val[i3]} + ${val[i4]} = ${val[i3]+val[i4]}.`));
+  const [hi,lo]=val[i1]>val[i5]?[i1,i5]:[i5,i1],df=val[hi]-val[lo];
+  qs.push(num(`На скільки менше дітей любить ${n(lo)}, ніж ${n(hi)}?`,df,[val[hi]+val[lo],df+1,val[lo]],`${val[hi]} − ${val[lo]} = ${df}.`));
+  const f=rnd(0,4),a=rnd(1,val[f]-1);
+  qs.push(pick(`Чи можна відповісти, скільки окремо хлопців і окремо дівчаток обрали ${n(f)}?`,[`Так, ${a} ${pl(a,"хлопець","хлопці","хлопців")} і ${val[f]-a} ${pl(val[f]-a,"дівчинка","дівчинки","дівчаток")}`,"Ні, діаграма цього не показує"],1,"Діаграма показує лише загальну кількість дітей."));
+  return{title:"3. Кругова діаграма",sub:"Який фрукт вибрали діти (числа вказані на діаграмі).",svg:pieChart(data),legend:F.map(f=>[f[1],f[0]]),qs};
+}
 
 const app=document.getElementById("app"),sc=document.getElementById("sc"),tot=document.getElementById("tot"),end=document.getElementById("end");
 let done=0,good=0,all=0;
 function build(){
+  const T=[genBar(),genLine(),genPie()];
   app.innerHTML="";done=good=0;all=0;end.className="end";
   T.forEach((t,ti)=>{
     const sec=document.createElement("section");
-    sec.innerHTML=`<h2>${t.title}</h2><p class="sub">${t.sub}</p><div class="chart">${t.svg()}</div><ul class="legend">${t.legend.map(l=>`<li><i style="background:${l[0]}"></i>${l[1]}</li>`).join("")}</ul>`;
+    sec.innerHTML=`<h2>${t.title}</h2><p class="sub">${t.sub}</p><div class="chart">${t.svg}</div><ul class="legend">${t.legend.map(l=>`<li><i style="background:${l[0]}"></i>${l[1]}</li>`).join("")}</ul>`;
     t.qs.forEach((q,qi)=>{
       all++;const multi=q.a.length>1,name=`q${ti}_${qi}`,box=document.createElement("div");box.className="q";
       box.innerHTML=`<p>${qi+1}) ${q.q}</p>${q.hint?`<div class="hint">${q.hint}</div>`:""}`+
@@ -146,7 +192,7 @@ function build(){
         fb.hidden=false;fb.className="fb "+(okAll?"ok":"no");
         fb.innerHTML=`<b>${okAll?"✓ Правильно!":"✗ Неправильно."}</b><span>${q.w}</span>`;
         btn.disabled=true;done++;if(okAll)good++;sc.textContent=good;
-        if(done===all){const p=good/all;end.innerHTML=`Результат: ${good} з ${all}<br>${p>=.9?"Чудово! ⭐⭐⭐":p>=.6?"Добре! ⭐⭐ Спробуй ще раз — вийде ще краще.":"Не засмучуйся! ⭐ Розгляни діаграми ще раз і спробуй знову."}`;end.className="end show";end.scrollIntoView({behavior:"smooth",block:"center"})}
+        if(done===all){const p=good/all;end.innerHTML=`Результат: ${good} з ${all}<br>${p>=.9?"Чудово! ⭐⭐⭐":p>=.6?"Добре! ⭐⭐ Спробуй ще раз — вийде ще краще.":"Не засмучуйся! ⭐ Розгляни діаграми ще раз і спробуй знову."}<br><small>Натисни «Новий варіант» угорі, щоб пройти тест з новими числами.</small>`;end.className="end show";end.scrollIntoView({behavior:"smooth",block:"center"})}
       };
       sec.appendChild(box);
     });
