@@ -111,7 +111,7 @@ function genBar(){
   const all=sum(cs);
   const qs=[];
   const m=v[a1].indexOf(Math.max(...v[a1]));
-  qs.push(pick(`В якому класі найбільше дітей люблять ${an[a1].acc}?`,cls,m,`У ${cls[m]} стовпчик (${an[a1].n}) найвищий — ${v[a1][m]} дітей.`));
+  qs.push(pick(`Порівняй стовпчики «${an[a1].n}» в усіх трьох класах. В якому класі кількість дітей, які люблять ${an[a1].acc}, найбільша?`,cls,m,`У ${cls[m]} стовпчик (${an[a1].n}) найвищий — ${v[a1][m]} дітей.`));
   const t=v[a2],f=x=>cls.map((c,i)=>`${c} — ${x[i]}`).join(", ");
   const bad=[v[a1],[...t].reverse(),t.map((x,i)=>i===1?x+1:x),t.map((x,i)=>i===0?x-1:x),v[a3]].map(f);
   const wrong=[...new Set(bad)].filter(x=>x!==f(t)).slice(0,3);
